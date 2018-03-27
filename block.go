@@ -11,5 +11,6 @@ type Block struct {
 }
 
 func (b *Block) String() string {
+	verboseMsg("(b *Block) String()")
 	return fmt.Sprintf("index: %d,previousHash:%s,timestamp:%d,data:%s,hash:%s", b.Index, b.PreviousHash, b.Timestamp, b.Data, b.Hash)
 }

@@ -8,11 +8,15 @@ import (
 )
 
 func handleBlocks(w http.ResponseWriter, r *http.Request) {
+	verboseMsg("handleBlocks")
+
 	bs, _ := json.Marshal(blockchain)
 	w.Write(bs)
 }
 
 func handleMineBlock(w http.ResponseWriter, r *http.Request) {
+	verboseMsg("handleMineBlock")
+
 	var v struct {
 		Data string `json:"data"`
 	}
@@ -26,12 +30,16 @@ func handleMineBlock(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Invalid block data. " + err.Error() + "/n"))
 		return
 	}
+
 	block := generateNextBlock(v.Data)
+
 	addBlock(block)
 	broadcast(responseLatestMsg())
 }
 
 func handlePeers(w http.ResponseWriter, r *http.Request) {
+	verboseMsg("handlePeers")
+
 	var slice []string
 
 	for _, socket := range sockets {
@@ -41,14 +49,18 @@ func handlePeers(w http.ResponseWriter, r *http.Request) {
 			slice = append(slice, socket.Request().RemoteAddr)
 		}
 	}
+
 	bs, _ := json.Marshal(slice)
 	w.Write(bs)
 }
 
 func handleAddPeer(w http.ResponseWriter, r *http.Request) {
+	verboseMsg("handleAddPeer")
+
 	var v struct {
 		Peer string `json:"peer"`
 	}
+
 	decoder := json.NewDecoder(r.Body)
 	defer r.Body.Close()
 
@@ -56,6 +68,7 @@ func handleAddPeer(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		w.WriteHeader(http.StatusGone)
+
 		log.Println("[API] invalid peer data : ", err.Error())
 		w.Write([]byte("invalid peer data. " + err.Error()))
 		return

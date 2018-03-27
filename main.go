@@ -8,6 +8,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
 	"sort"
 	"strings"
 	"time"
@@ -29,7 +30,7 @@ func initGenesisBlock() *Block {
 	b.PreviousHash = "0"
 	b.Timestamp = 1465154705
 	b.Data = "My genesis block!"
-	b.Hash = "816534932c2b7154836da6afc367695e6337db8a921823784c14378abed4f7d7"
+	b.Hash = fmt.Sprintf("%x", sha256.Sum256([]byte(fmt.Sprintf("%d%s%d%s", b.Index, b.PreviousHash, b.Timestamp, b.Data))))
 	return b
 }
 
@@ -39,6 +40,7 @@ var (
 	httpAddr     = flag.String("api", ":3001", "api server address")
 	p2pAddr      = flag.String("p2p", ":6001", "p2p server address")
 	initialPeers = flag.String("peers", "ws://localhost:6001", "initial peers")
+	verbose      = flag.Bool("verbose", false, "verbose")
 )
 
 type ResponseBlockchain struct {
@@ -52,21 +54,32 @@ func errFatal(msg string, err error) {
 	}
 }
 
+func verboseMsg(msg string) {
+	if *verbose == true {
+		fmt.Fprintf(os.Stderr, "\x1b[31m-> %s\x1b[0m\n", msg)
+	}
+}
+
 func connectToPeers(peersAddr []string) {
+	verboseMsg("connectToPeers()")
 	for _, peer := range peersAddr {
 		if peer == "" {
 			continue
 		}
+
 		ws, err := websocket.Dial(peer, "", peer)
+
 		if err != nil {
 			log.Println("Dial to peer", err)
 			continue
 		}
+
 		initConnection(ws)
 	}
 }
 
 func initConnection(ws *websocket.Conn) {
+	verboseMsg("initConnection()")
 	go wsHandleP2P(ws)
 
 	log.Println("query latest block.")
@@ -74,6 +87,7 @@ func initConnection(ws *websocket.Conn) {
 }
 
 func wsHandleP2P(ws *websocket.Conn) {
+	verboseMsg("wsHandleP2P()")
 	var (
 		v    = &ResponseBlockchain{}
 		peer = ws.LocalAddr().String()
@@ -120,10 +134,12 @@ func wsHandleP2P(ws *websocket.Conn) {
 }
 
 func getLatestBlock() (block *Block) {
+	verboseMsg("getLatestBlock()")
 	return blockchain[len(blockchain)-1]
 }
 
 func responseLatestMsg() (bs []byte) {
+	verboseMsg("responseLatestMsg()")
 	var v = &ResponseBlockchain{Type: responseBlockchain}
 	d, _ := json.Marshal(blockchain[len(blockchain)-1:])
 	v.Data = string(d)
@@ -132,18 +148,22 @@ func responseLatestMsg() (bs []byte) {
 }
 
 func queryLatestMsg() []byte {
+	verboseMsg("queryLatestMsg()")
 	return []byte(fmt.Sprintf("{\"type\": %d}", queryLatest))
 }
 
 func queryAllMsg() []byte {
+	verboseMsg("queryAllMsg()")
 	return []byte(fmt.Sprintf("{\"type\": %d}", queryAll))
 }
 
 func calculateHashForBlock(b *Block) string {
+	verboseMsg("calculateHashForBlock()")
 	return fmt.Sprintf("%x", sha256.Sum256([]byte(fmt.Sprintf("%d%s%d%s", b.Index, b.PreviousHash, b.Timestamp, b.Data))))
 }
 
 func generateNextBlock(data string) (nb *Block) {
+	verboseMsg("generateNextBlock()")
 	var previousBlock = getLatestBlock()
 	nb = &Block{
 		Data:         data,
@@ -156,12 +176,14 @@ func generateNextBlock(data string) (nb *Block) {
 }
 
 func addBlock(b *Block) {
+	verboseMsg("addBlock")
 	if isValidNewBlock(b, getLatestBlock()) {
 		blockchain = append(blockchain, b)
 	}
 }
 
 func isValidNewBlock(nb, pb *Block) (ok bool) {
+	verboseMsg("isValidNewBlock")
 	if nb.Hash == calculateHashForBlock(nb) &&
 		pb.Index+1 == nb.Index &&
 		pb.Hash == nb.PreviousHash {
@@ -171,11 +193,15 @@ func isValidNewBlock(nb, pb *Block) (ok bool) {
 }
 
 func isValidChain(bc []*Block) bool {
+	verboseMsg("isValidChain")
+
 	if bc[0].String() != genesisBlock.String() {
 		log.Println("No same GenesisBlock.", bc[0].String())
 		return false
 	}
+
 	var temp = []*Block{bc[0]}
+
 	for i := 1; i < len(bc); i++ {
 		if isValidNewBlock(bc[i], temp[i-1]) {
 			temp = append(temp, bc[i])
@@ -187,6 +213,8 @@ func isValidChain(bc []*Block) bool {
 }
 
 func replaceChain(bc []*Block) {
+	verboseMsg("replaceChain")
+
 	if isValidChain(bc) && len(bc) > len(blockchain) {
 		log.Println("Received blockchain is valid. Replacing current blockchain with received blockchain.")
 		blockchain = bc
@@ -197,6 +225,8 @@ func replaceChain(bc []*Block) {
 }
 
 func broadcast(msg []byte) {
+	verboseMsg("broadcast")
+
 	for n, socket := range sockets {
 		_, err := socket.Write(msg)
 		if err != nil {
@@ -207,6 +237,8 @@ func broadcast(msg []byte) {
 }
 
 func handleBlockchainResponse(msg []byte) {
+	verboseMsg("handleBlockchainResponse")
+
 	var receivedBlocks = []*Block{}
 
 	err := json.Unmarshal(msg, &receivedBlocks)
@@ -219,6 +251,7 @@ func handleBlockchainResponse(msg []byte) {
 
 	if latestBlockReceived.Index > latestBlockHeld.Index {
 		log.Printf("blockchain possibly behind. We got: %d Peer got: %d", latestBlockHeld.Index, latestBlockReceived.Index)
+
 		if latestBlockHeld.Hash == latestBlockReceived.PreviousHash {
 			log.Println("We can append the received block to our chain.")
 			blockchain = append(blockchain, latestBlockReceived)
