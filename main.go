@@ -27,9 +27,9 @@ func initGenesisBlock() *Block {
 	b := &Block{}
 	b.Index = 0
 	b.PreviousHash = "0"
-	b.Timestamp = time.Now().Unix()
+	b.Timestamp = 1465154705
 	b.Data = "My genesis block!"
-	b.Hash = fmt.Sprintf("%x", sha256.Sum256([]byte(fmt.Sprintf("%d%s%d%s", b.Index, b.PreviousHash, b.Timestamp, b.Data))))
+	b.Hash = "816534932c2b7154836da6afc367695e6337db8a921823784c14378abed4f7d7"
 	return b
 }
 
@@ -216,6 +216,7 @@ func handleBlockchainResponse(msg []byte) {
 
 	latestBlockReceived := receivedBlocks[len(receivedBlocks)-1]
 	latestBlockHeld := getLatestBlock()
+
 	if latestBlockReceived.Index > latestBlockHeld.Index {
 		log.Printf("blockchain possibly behind. We got: %d Peer got: %d", latestBlockHeld.Index, latestBlockReceived.Index)
 		if latestBlockHeld.Hash == latestBlockReceived.PreviousHash {
@@ -241,6 +242,7 @@ func main() {
 	http.HandleFunc("/mine_block", handleMineBlock)
 	http.HandleFunc("/peers", handlePeers)
 	http.HandleFunc("/add_peer", handleAddPeer)
+
 	go func() {
 		log.Println("Listen HTTP on", *httpAddr)
 		errFatal("start api server", http.ListenAndServe(*httpAddr, nil))
