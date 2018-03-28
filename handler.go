@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bufio"
 	"encoding/json"
+	"io"
 	"log"
 	"net/http"
 	"strings"
@@ -17,21 +19,24 @@ func handleBlocks(w http.ResponseWriter, r *http.Request) {
 func handleMineBlock(w http.ResponseWriter, r *http.Request) {
 	verboseMsg("handleMineBlock")
 
-	var v struct {
-		Data []byte `json:"data"`
-	}
-	decoder := json.NewDecoder(r.Body)
+	var data []byte
+	reader := bufio.NewReader(r.Body)
 	defer r.Body.Close()
 
-	err := decoder.Decode(&v)
-	if err != nil {
-		w.WriteHeader(http.StatusGone)
-		log.Println("[API] Invalid block data : ", err.Error())
-		w.Write([]byte("Invalid block data. " + err.Error() + "/n"))
-		return
+	for {
+		b, err := reader.ReadByte()
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			w.WriteHeader(http.StatusGone)
+			log.Println("[API] Invalid block data : ", err.Error())
+			w.Write([]byte("Invalid block data. " + err.Error() + "/n"))
+			return
+		}
+		data = append(data, b)
 	}
 
-	block := generateNextBlock(v.Data)
+	block := generateNextBlock(data)
 
 	addBlock(block)
 	broadcast(responseLatestMsg())

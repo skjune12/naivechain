@@ -30,7 +30,7 @@ func initGenesisBlock() *Block {
 	b.PreviousHash = "0"
 	b.Timestamp = 1465154705
 	b.Data = []byte("My genesis block!")
-	b.Hash = fmt.Sprintf("%x", sha256.Sum256([]byte(fmt.Sprintf("%d%s%d%s", b.Index, b.PreviousHash, b.Timestamp, b.Data))))
+	b.Hash = fmt.Sprintf("%x", sha256.Sum256([]byte(fmt.Sprintf("%d%s%d%x", b.Index, b.PreviousHash, b.Timestamp, b.Data))))
 	return b
 }
 
@@ -159,7 +159,7 @@ func queryAllMsg() []byte {
 
 func calculateHashForBlock(b *Block) string {
 	verboseMsg("calculateHashForBlock()")
-	return fmt.Sprintf("%x", sha256.Sum256([]byte(fmt.Sprintf("%d%s%d%s", b.Index, b.PreviousHash, b.Timestamp, b.Data))))
+	return fmt.Sprintf("%x", sha256.Sum256([]byte(fmt.Sprintf("%d%s%d%x", b.Index, b.PreviousHash, b.Timestamp, b.Data))))
 }
 
 func generateNextBlock(data []byte) (nb *Block) {
