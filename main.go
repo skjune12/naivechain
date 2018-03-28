@@ -29,7 +29,7 @@ func initGenesisBlock() *Block {
 	b.Index = 0
 	b.PreviousHash = "0"
 	b.Timestamp = 1465154705
-	b.Data = "My genesis block!"
+	b.Data = []byte("My genesis block!")
 	b.Hash = fmt.Sprintf("%x", sha256.Sum256([]byte(fmt.Sprintf("%d%s%d%s", b.Index, b.PreviousHash, b.Timestamp, b.Data))))
 	return b
 }
@@ -45,7 +45,7 @@ var (
 
 type ResponseBlockchain struct {
 	Type int    `json:"type"`
-	Data string `json:"data"`
+	Data []byte `json:"data"`
 }
 
 func errFatal(msg string, err error) {
@@ -122,7 +122,7 @@ func wsHandleP2P(ws *websocket.Conn) {
 		case queryAll:
 			d, _ := json.Marshal(blockchain)
 			v.Type = responseBlockchain
-			v.Data = string(d)
+			v.Data = []byte(d)
 			bs, _ := json.Marshal(v)
 			log.Printf("responseChainMsg: %s\n", bs)
 			ws.Write(bs)
@@ -142,7 +142,7 @@ func responseLatestMsg() (bs []byte) {
 	verboseMsg("responseLatestMsg()")
 	var v = &ResponseBlockchain{Type: responseBlockchain}
 	d, _ := json.Marshal(blockchain[len(blockchain)-1:])
-	v.Data = string(d)
+	v.Data = []byte(d)
 	bs, _ = json.Marshal(v)
 	return
 }
@@ -162,7 +162,7 @@ func calculateHashForBlock(b *Block) string {
 	return fmt.Sprintf("%x", sha256.Sum256([]byte(fmt.Sprintf("%d%s%d%s", b.Index, b.PreviousHash, b.Timestamp, b.Data))))
 }
 
-func generateNextBlock(data string) (nb *Block) {
+func generateNextBlock(data []byte) (nb *Block) {
 	verboseMsg("generateNextBlock()")
 	var previousBlock = getLatestBlock()
 	nb = &Block{

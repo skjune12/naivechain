@@ -6,7 +6,7 @@ type Block struct {
 	Index        int64  `json:index`
 	PreviousHash string `json:previousHash`
 	Timestamp    int64  `json:"timestamp"`
-	Data         string `json:"data"`
+	Data         []byte `json:"data"`
 	Hash         string `json:"hash"`
 }
 

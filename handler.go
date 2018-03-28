@@ -18,7 +18,7 @@ func handleMineBlock(w http.ResponseWriter, r *http.Request) {
 	verboseMsg("handleMineBlock")
 
 	var v struct {
-		Data string `json:"data"`
+		Data []byte `json:"data"`
 	}
 	decoder := json.NewDecoder(r.Body)
 	defer r.Body.Close()
