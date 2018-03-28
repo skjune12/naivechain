@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gorilla/mux"
 	"golang.org/x/net/websocket"
 )
 
@@ -269,16 +270,18 @@ func handleBlockchainResponse(msg []byte) {
 
 func main() {
 	flag.Parse()
+	router := mux.NewRouter()
+
 	connectToPeers(strings.Split(*initialPeers, ","))
 
-	http.HandleFunc("/blocks", handleBlocks)
-	http.HandleFunc("/mine_block", handleMineBlock)
-	http.HandleFunc("/peers", handlePeers)
-	http.HandleFunc("/add_peer", handleAddPeer)
+	router.HandleFunc("/blocks", handleBlocks).Methods("GET")
+	router.HandleFunc("/mine_block", handleMineBlock).Methods("POST")
+	router.HandleFunc("/peers", handlePeers).Methods("GET")
+	router.HandleFunc("/add_peer", handleAddPeer).Methods("POST")
 
 	go func() {
 		log.Println("Listen HTTP on", *httpAddr)
-		errFatal("start api server", http.ListenAndServe(*httpAddr, nil))
+		errFatal("start api server", http.ListenAndServe(*httpAddr, router))
 	}()
 
 	http.Handle("/", websocket.Handler(wsHandleP2P))
