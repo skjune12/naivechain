@@ -275,6 +275,7 @@ func main() {
 	connectToPeers(strings.Split(*initialPeers, ","))
 
 	router.HandleFunc("/blocks", handleBlocks).Methods("GET")
+	router.HandleFunc("/block/{index}", handleBlock).Methods("GET")
 	router.HandleFunc("/mine_block", handleMineBlock).Methods("POST")
 	router.HandleFunc("/peers", handlePeers).Methods("GET")
 	router.HandleFunc("/add_peer", handleAddPeer).Methods("POST")

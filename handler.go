@@ -6,7 +6,10 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
+
+	"github.com/gorilla/mux"
 )
 
 func handleBlocks(w http.ResponseWriter, r *http.Request) {
@@ -14,6 +17,19 @@ func handleBlocks(w http.ResponseWriter, r *http.Request) {
 
 	bs, _ := json.Marshal(blockchain)
 	w.Write(bs)
+}
+
+func handleBlock(w http.ResponseWriter, r *http.Request) {
+	verboseMsg("handleBlock")
+	params := mux.Vars(r)
+	index, _ := strconv.ParseInt(params["index"], 10, 64)
+
+	for _, block := range blockchain {
+		if block.Index == index {
+			bs, _ := json.Marshal(blockchain[index])
+			w.Write(bs)
+		}
+	}
 }
 
 func handleMineBlock(w http.ResponseWriter, r *http.Request) {
