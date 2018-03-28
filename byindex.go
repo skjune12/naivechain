@@ -3,7 +3,7 @@ package main
 type ByIndex []*Block
 
 func (b ByIndex) Len() int {
-	verboseMsg("(b ByIndex Len")
+	verboseMsg("(b ByIndex) Len")
 	return len(b)
 }
 
